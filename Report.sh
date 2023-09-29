@@ -18,6 +18,9 @@ output_excel="output.xlsx"
 # Log file
 log_file="script_log.txt"
 
+# LibreOffice macro file
+macro_file="add_borders.bas"
+
 # Function to log errors and exit with an error code
 log_error_and_exit() {
   local error_message="$1"
@@ -33,6 +36,9 @@ sed -i '/^--/d' "$output_csv" || log_error_and_exit "Hyphen removal failed."
 
 # Convert CSV to Excel using LibreOffice
 libreoffice --convert-to xlsx "$output_csv" --outdir $(pwd) || log_error_and_exit "CSV to Excel conversion failed."
+
+# Run LibreOffice macro to add borders
+libreoffice --headless --run-macro $macro_file "$output_excel" || log_error_and_exit "Macro execution failed."
 
 # Clean up the CSV file (optional)
 rm "$output_csv"
