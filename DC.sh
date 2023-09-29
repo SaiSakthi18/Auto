@@ -3,19 +3,19 @@
 # Get the current day of the week (1 = Monday, 2 = Tuesday, ..., 7 = Sunday)
 current_day=$(date +%u)
 
-# Database connection parameters
-server="your_server_name"
-database="your_database_name"
-username="your_username"
-password="your_password"
-
-# SQL queries
-if [ "$current_day" -eq 1 ]; then
-    # Query for Monday
-    query="SELECT * FROM your_table_monday"
+# Load database properties
+if [ -f "db.properties" ]; then
+    source "db.properties"
 else
-    # Query for other days
-    query="SELECT * FROM your_table_other_days"
+    echo "Error: db.properties file not found."
+    exit 1
+fi
+
+# Determine the query to use based on the current day
+if [ "$current_day" -eq 1 ]; then
+    query="$query_monday"
+else
+    query="$query_other_days"
 fi
 
 # Output CSV file
