@@ -28,6 +28,9 @@ log_error_and_exit() {
 # Execute SQL query and save result as CSV
 sqlcmd -S "$server" -d "$database" -U "$username" -P "$password" -Q "$query" -o "$output_csv" -s "," -W -w 700 || log_error_and_exit "SQL query execution failed."
 
+# Remove hyphens after the header using sed
+sed -i '/^--/d' "$output_csv" || log_error_and_exit "Hyphen removal failed."
+
 # Convert CSV to Excel using LibreOffice
 libreoffice --convert-to xlsx "$output_csv" --outdir $(pwd) || log_error_and_exit "CSV to Excel conversion failed."
 
