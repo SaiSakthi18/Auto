@@ -15,13 +15,23 @@ output_csv="output.csv"
 # Output Excel file
 output_excel="output.xlsx"
 
+# Log file
+log_file="script_log.txt"
+
+# Function to log errors and exit with an error code
+log_error_and_exit() {
+  local error_message="$1"
+  echo "Error: $error_message" >> "$log_file"
+  exit 1
+}
+
 # Execute SQL query and save result as CSV
-sqlcmd -S $server -d $database -U $username -P $password -Q "$query" -o $output_csv -s "," -W -w 700
+sqlcmd -S "$server" -d "$database" -U "$username" -P "$password" -Q "$query" -o "$output_csv" -s "," -W -w 700 || log_error_and_exit "SQL query execution failed."
 
 # Convert CSV to Excel using LibreOffice
-libreoffice --convert-to xlsx $output_csv --outdir $(pwd)
+libreoffice --convert-to xlsx "$output_csv" --outdir $(pwd) || log_error_and_exit "CSV to Excel conversion failed."
 
 # Clean up the CSV file (optional)
-rm $output_csv
+rm "$output_csv"
 
 echo "Result saved as $output_excel"
