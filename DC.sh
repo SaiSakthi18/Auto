@@ -7,7 +7,7 @@ current_day=$(date +%u)
 if [ -f "etc/db.properties" ]; then
     source "etc/db.properties"
 else
-    echo "Error: etc/db.properties file not found."
+    echo "Error: etc/db.properties file not found." 2>> "logs/DiscardedCases.txt"
     exit 1
 fi
 
