@@ -7,7 +7,7 @@ current_day=$(date +%u)
 if [ -f "etc/db.properties" ]; then
     source "etc/db.properties"
 else
-    echo "Error: etc/db.properties file not found." 2>> "logs/DiscardedCases.txt"
+    echo "Error: etc/db.properties file not found." >> "logs/DiscardedCases.txt"
     exit 1
 fi
 
@@ -45,14 +45,16 @@ log_query_error_and_exit() {
 echo "Starting SQL query execution..." >> "$log_file"
 
 # Execute SQL query and save result as CSV
-sqlcmd -S "$server,$port" -d "$database" -U "$username" -P "$password" -Q "$query" -o "$output_csv" -s "," -W -w 700 2>> "$log_file" || log_query_error_and_exit "SQL query execution failed."
-
-# Log entry: SQL query executed successfully
-echo "SQL query executed successfully." >> "$log_file"
+if sqlcmd -S "$server,$port" -d "$database" -U "$username" -P "$password" -Q "$query" -o "$output_csv" -s "," -W -w 700 2>> "$log_file"; then
+    # Log entry: SQL query executed successfully
+    echo "SQL query executed successfully." >> "$log_file"
+else
+    log_query_error_and_exit "SQL query execution failed."
+fi
 
 # Check if the output file is empty (query returned no results)
 if [ ! -s "$output_csv" ]; then
-  log_query_error_and_exit "SQL query returned no results."
+    log_query_error_and_exit "SQL query returned no results."
 fi
 
 # Log entry: SQL query returned results
@@ -62,19 +64,23 @@ echo "SQL query returned results." >> "$log_file"
 echo "Removing hyphens from the CSV file..." >> "$log_file"
 
 # Remove hyphens after the header using sed
-sed -i '/^--/d' "$output_csv" || log_query_error_and_exit "Hyphen removal failed."
-
-# Log entry: Hyphens removed from the CSV file
-echo "Hyphens removed from the CSV file." >> "$log_file"
+if sed -i '/^--/d' "$output_csv"; then
+    # Log entry: Hyphens removed from the CSV file
+    echo "Hyphens removed from the CSV file." >> "$log_file"
+else
+    log_query_error_and_exit "Hyphen removal failed."
+fi
 
 # Log entry: Converting CSV to Excel
 echo "Converting CSV to Excel..." >> "$log_file"
 
 # Convert CSV to Excel using LibreOffice
-libreoffice --convert-to xlsx "$output_csv" --outdir "output" 2>> "$log_file" || log_query_error_and_exit "CSV to Excel conversion failed."
-
-# Log entry: CSV converted to Excel successfully
-echo "CSV converted to Excel successfully." >> "$log_file"
+if libreoffice --convert-to xlsx "$output_csv" --outdir "output" 2>> "$log_file"; then
+    # Log entry: CSV converted to Excel successfully
+    echo "CSV converted to Excel successfully." >> "$log_file"
+else
+    log_query_error_and_exit "CSV to Excel conversion failed."
+fi
 
 # Clean up the CSV file (optional)
 rm "$output_csv"
