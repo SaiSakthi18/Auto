@@ -44,8 +44,8 @@ log_query_error_and_exit() {
 # Log entry: Starting SQL query execution
 echo "Starting SQL query execution..." >> "$log_file"
 
-# Execute SQL query and save result as CSV
-if sqlcmd -S "$server,$port" -d "$database" -U "$username" -P "$password" -Q "$query" -o "$output_csv" -s "," -W -w 700 2>> "$log_file"; then
+# Execute SQL query and save result as CSV, redirect both stdout and stderr to the log file
+if sqlcmd -S "$server,$port" -d "$database" -U "$username" -P "$password" -Q "$query" -o "$output_csv" -s "," -W -w 700 2>&1 >> "$log_file"; then
     # Log entry: SQL query executed successfully
     echo "SQL query executed successfully." >> "$log_file"
 else
@@ -63,8 +63,8 @@ echo "SQL query returned results." >> "$log_file"
 # Log entry: Removing hyphens from the CSV file
 echo "Removing hyphens from the CSV file..." >> "$log_file"
 
-# Remove hyphens after the header using sed
-if sed -i '/^--/d' "$output_csv"; then
+# Remove hyphens after the header using sed, redirect both stdout and stderr to the log file
+if sed -i '/^--/d' "$output_csv" 2>&1 >> "$log_file"; then
     # Log entry: Hyphens removed from the CSV file
     echo "Hyphens removed from the CSV file." >> "$log_file"
 else
@@ -74,8 +74,8 @@ fi
 # Log entry: Converting CSV to Excel
 echo "Converting CSV to Excel..." >> "$log_file"
 
-# Convert CSV to Excel using LibreOffice
-if libreoffice --convert-to xlsx "$output_csv" --outdir "output" 2>> "$log_file"; then
+# Convert CSV to Excel using LibreOffice, redirect both stdout and stderr to the log file
+if libreoffice --convert-to xlsx "$output_csv" --outdir "output" 2>&1 >> "$log_file"; then
     # Log entry: CSV converted to Excel successfully
     echo "CSV converted to Excel successfully." >> "$log_file"
 else
