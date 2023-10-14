@@ -37,60 +37,48 @@ log_error_and_exit() {
 # Log entry: Starting SQL query execution
 echo "Starting SQL query execution..." >> "$log_file"
 
-# Execute SQL query and save result as CSV, capture exit code and redirect stdout to the log file
-if sqlcmd -S "$server,$port" -d "$database" -U "$username" -P "$password" -Q "$query" -o "$output_csv" -s "," -W -w 700 >> "$log_file" 2>&1; then
-    sql_exit_code=$?
-    if [ $sql_exit_code -eq 0 ]; then
-        # Log entry: SQL query executed successfully
-        echo "SQL query executed successfully." >> "$log_file"
-    else
-        log_query_error_and_exit "SQL query execution failed with exit code $sql_exit_code."
-    fi
-else
-    log_query_error_and_exit "SQL query execution failed."
-fi
+# Execute the entire script within a subshell, redirect both stdout and stderr to the log file
+(
+  # Execute SQL query and save result as CSV
+  if sqlcmd -S "$server,$port" -d "$database" -U "$username" -P "$password" -Q "$query" -o "$output_csv" -s "," -W -w 700; then
+      # Log entry: SQL query executed successfully
+      echo "SQL query executed successfully." >> "$log_file"
+  else
+      log_query_error_and_exit "SQL query execution failed."
+  fi
 
-# Check if the output file is empty (query returned no results)
-if [ ! -s "$output_csv" ]; then
-    log_query_error_and_exit "SQL query returned no results."
-fi
+  # Check if the output file is empty (query returned no results)
+  if [ ! -s "$output_csv" ]; then
+      log_query_error_and_exit "SQL query returned no results."
+  fi
 
-# Log entry: SQL query returned results
-echo "SQL query returned results." >> "$log_file"
+  # Log entry: SQL query returned results
+  echo "SQL query returned results." >> "$log_file"
 
-# Log entry: Removing hyphens from the CSV file
-echo "Removing hyphens from the CSV file..." >> "$log_file"
+  # Log entry: Removing hyphens from the CSV file
+  echo "Removing hyphens from the CSV file..." >> "$log_file"
 
-# Remove hyphens after the header using sed, capture exit code and redirect stdout to the log file
-if sed -i '/^--/d' "$output_csv" >> "$log_file" 2>&1; then
-    sed_exit_code=$?
-    if [ $sed_exit_code -eq 0 ]; then
-        # Log entry: Hyphens removed from the CSV file
-        echo "Hyphens removed from the CSV file." >> "$log_file"
-    else
-        log_query_error_and_exit "Hyphen removal failed with exit code $sed_exit_code."
-    fi
-else
-    log_query_error_and_exit "Hyphen removal failed."
-fi
+  # Remove hyphens after the header using sed
+  if sed -i '/^--/d' "$output_csv"; then
+      # Log entry: Hyphens removed from the CSV file
+      echo "Hyphens removed from the CSV file." >> "$log_file"
+  else
+      log_query_error_and_exit "Hyphen removal failed."
+  fi
 
-# Log entry: Converting CSV to Excel
-echo "Converting CSV to Excel..." >> "$log_file"
+  # Log entry: Converting CSV to Excel
+  echo "Converting CSV to Excel..." >> "$log_file"
 
-# Convert CSV to Excel using LibreOffice, capture exit code and redirect stdout to the log file
-if libreoffice --convert-to xlsx "$output_csv" --outdir "output" >> "$log_file" 2>&1; then
-    libreoffice_exit_code=$?
-    if [ $libreoffice_exit_code -eq 0 ]; then
-        # Log entry: CSV converted to Excel successfully
-        echo "CSV converted to Excel successfully." >> "$log_file"
-    else
-        log_query_error_and_exit "CSV to Excel conversion failed with exit code $libreoffice_exit_code."
-    fi
-else
-    log_query_error_and_exit "CSV to Excel conversion failed."
-fi
+  # Convert CSV to Excel using LibreOffice
+  if libreoffice --convert-to xlsx "$output_csv" --outdir "output"; then
+      # Log entry: CSV converted to Excel successfully
+      echo "CSV converted to Excel successfully." >> "$log_file"
+  else
+      log_query_error_and_exit "CSV to Excel conversion failed."
+  fi
 
-# Clean up the CSV file (optional)
-rm "$output_csv"
+  # Clean up the CSV file (optional)
+  rm "$output_csv"
 
-echo "Result saved as $output_excel"
+  echo "Result saved as $output_excel"
+) 2>&1 >> "$log_file"
