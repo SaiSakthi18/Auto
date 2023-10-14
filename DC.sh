@@ -34,20 +34,18 @@ log_error_and_exit() {
   exit 1
 }
 
-# Function to log query issues and errors and exit with an error code
-log_query_error_and_exit() {
-  local error_message="$1"
-  echo "SQL Query Error: $error_message" >> "$log_file"
-  exit 2
-}
-
 # Log entry: Starting SQL query execution
 echo "Starting SQL query execution..." >> "$log_file"
 
-# Execute SQL query and save result as CSV, redirect both stdout and stderr to the log file
-if sqlcmd -S "$server,$port" -d "$database" -U "$username" -P "$password" -Q "$query" -o "$output_csv" -s "," -W -w 700 2>&1 >> "$log_file"; then
-    # Log entry: SQL query executed successfully
-    echo "SQL query executed successfully." >> "$log_file"
+# Execute SQL query and save result as CSV, capture exit code and redirect stdout to the log file
+if sqlcmd -S "$server,$port" -d "$database" -U "$username" -P "$password" -Q "$query" -o "$output_csv" -s "," -W -w 700 >> "$log_file" 2>&1; then
+    sql_exit_code=$?
+    if [ $sql_exit_code -eq 0 ]; then
+        # Log entry: SQL query executed successfully
+        echo "SQL query executed successfully." >> "$log_file"
+    else
+        log_query_error_and_exit "SQL query execution failed with exit code $sql_exit_code."
+    fi
 else
     log_query_error_and_exit "SQL query execution failed."
 fi
@@ -63,10 +61,15 @@ echo "SQL query returned results." >> "$log_file"
 # Log entry: Removing hyphens from the CSV file
 echo "Removing hyphens from the CSV file..." >> "$log_file"
 
-# Remove hyphens after the header using sed, redirect both stdout and stderr to the log file
-if sed -i '/^--/d' "$output_csv" 2>&1 >> "$log_file"; then
-    # Log entry: Hyphens removed from the CSV file
-    echo "Hyphens removed from the CSV file." >> "$log_file"
+# Remove hyphens after the header using sed, capture exit code and redirect stdout to the log file
+if sed -i '/^--/d' "$output_csv" >> "$log_file" 2>&1; then
+    sed_exit_code=$?
+    if [ $sed_exit_code -eq 0 ]; then
+        # Log entry: Hyphens removed from the CSV file
+        echo "Hyphens removed from the CSV file." >> "$log_file"
+    else
+        log_query_error_and_exit "Hyphen removal failed with exit code $sed_exit_code."
+    fi
 else
     log_query_error_and_exit "Hyphen removal failed."
 fi
@@ -74,10 +77,15 @@ fi
 # Log entry: Converting CSV to Excel
 echo "Converting CSV to Excel..." >> "$log_file"
 
-# Convert CSV to Excel using LibreOffice, redirect both stdout and stderr to the log file
-if libreoffice --convert-to xlsx "$output_csv" --outdir "output" 2>&1 >> "$log_file"; then
-    # Log entry: CSV converted to Excel successfully
-    echo "CSV converted to Excel successfully." >> "$log_file"
+# Convert CSV to Excel using LibreOffice, capture exit code and redirect stdout to the log file
+if libreoffice --convert-to xlsx "$output_csv" --outdir "output" >> "$log_file" 2>&1; then
+    libreoffice_exit_code=$?
+    if [ $libreoffice_exit_code -eq 0 ]; then
+        # Log entry: CSV converted to Excel successfully
+        echo "CSV converted to Excel successfully." >> "$log_file"
+    else
+        log_query_error_and_exit "CSV to Excel conversion failed with exit code $libreoffice_exit_code."
+    fi
 else
     log_query_error_and_exit "CSV to Excel conversion failed."
 fi
