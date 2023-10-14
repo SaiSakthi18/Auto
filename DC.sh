@@ -3,11 +3,11 @@
 # Get the current day of the week (1 = Monday, 2 = Tuesday, ..., 7 = Sunday)
 current_day=$(date +%u)
 
-# Load database properties
-if [ -f "db.properties" ]; then
-    source "db.properties"
+# Load database properties from the etc directory
+if [ -f "etc/db.properties" ]; then
+    source "etc/db.properties"
 else
-    echo "Error: db.properties file not found."
+    echo "Error: etc/db.properties file not found."
     exit 1
 fi
 
@@ -18,14 +18,14 @@ else
     query="$query_other_days"
 fi
 
-# Output CSV file
-output_csv="output.csv"
+# Output CSV file in the output directory
+output_csv="output/output.csv"
 
-# Output Excel file
-output_excel="output.xlsx"
+# Output Excel file in the output directory
+output_excel="output/output.xlsx"
 
-# Log file
-log_file="script_log.txt"
+# Log file in the output directory
+log_file="output/script_log.txt"
 
 # Function to log errors and exit with an error code
 log_error_and_exit() {
@@ -35,13 +35,13 @@ log_error_and_exit() {
 }
 
 # Execute SQL query and save result as CSV
-sqlcmd -S "$server" -d "$database" -U "$username" -P "$password" -Q "$query" -o "$output_csv" -s "," -W -w 700 || log_error_and_exit "SQL query execution failed."
+sqlcmd -S "$server,$port" -d "$database" -U "$username" -P "$password" -Q "$query" -o "$output_csv" -s "," -W -w 700 2>> "$log_file" || log_error_and_exit "SQL query execution failed."
 
 # Remove hyphens after the header using sed
 sed -i '/^--/d' "$output_csv" || log_error_and_exit "Hyphen removal failed."
 
 # Convert CSV to Excel using LibreOffice
-libreoffice --convert-to xlsx "$output_csv" --outdir $(pwd) || log_error_and_exit "CSV to Excel conversion failed."
+libreoffice --convert-to xlsx "$output_csv" --outdir "output" 2>> "$log_file" || log_error_and_exit "CSV to Excel conversion failed."
 
 # Clean up the CSV file (optional)
 rm "$output_csv"
