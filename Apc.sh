@@ -32,8 +32,9 @@ get_column_names() {
     # Use sqlcmd to execute the stored procedure and fetch the column names
     # Replace 'your_stored_procedure_name' with the actual stored procedure name
     # You may need to add other connection options like -S, -U, -P, etc.
-    column_names=$(sqlcmd -S "your_db_server,${db_port}" -d "${db_name}" -U "${db_user}" -P "${db_password}" -Q "SET NOCOUNT ON; EXEC your_stored_procedure_name" -h -1 | head -n 1)
+    column_names=$(sqlcmd -S "your_db_server,${db_port}" -d "${db_name}" -U "${db_user}" -P "${db_password}" -Q "SET NOCOUNT ON; EXEC your_stored_procedure_name" -h -1 | grep -m 1 -o -P '(?<=").*?(?=")')
 }
+
 
 # Execute the stored procedure and save the result as CSV
 execute_stored_procedure() {
