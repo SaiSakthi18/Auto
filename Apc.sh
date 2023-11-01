@@ -9,7 +9,8 @@ log_file="logs/autopc_${current_date}.log"
 output_file="${output_dir}/AutoPC_${current_date}.xlsx"
 
 # Database connection details (including the port)
-db_server="your_db_server:your_db_port"
+db_server="your_db_server"
+db_port="your_db_port"  # Add your SQL Server port number
 db_name="your_db_name"
 db_user="your_db_user"
 db_password="your_db_password"
@@ -26,16 +27,15 @@ execute_stored_procedure() {
     local procedure_name="your_stored_procedure_name"
     local csv_file="${output_dir}/AutoPC_${current_date}.csv"
 
-    # Execute the stored procedure and save the result as CSV
+    # Execute the stored procedure using sqlcmd
     echo "Executing stored procedure..."
-    if ! sql_command_output=$(your_sql_command_here); then
+    sqlcmd -S "${db_server},${db_port}" -d "${db_name}" -U "${db_user}" -P "${db_password}" -Q "EXEC $procedure_name" -o "$csv_file" -h -1 -s ","
+
+    # Check for sqlcmd errors
+    if [ $? -ne 0 ]; then
         echo "Error: Failed to execute the stored procedure."
-        echo "Error Details: $sql_command_output"
         exit 1
     fi
-
-    # Store the output as a CSV file
-    echo "$sql_command_output" > "$csv_file"
 }
 
 # Convert CSV to XLSX using LibreOffice
