@@ -16,6 +16,9 @@ db_name="your_db_name"
 db_user="your_db_user"
 db_password="your_db_password"
 
+# Stored procedure name
+procedure_name="your_stored_procedure_name"
+
 # Function to remove old files
 remove_old_files() {
     # Remove old files in the "output" directory
@@ -23,19 +26,17 @@ remove_old_files() {
     rm -f "${output_dir}/*"
 }
 
-# Retrieve column names from the database
+# Function to get column names dynamically
 get_column_names() {
     echo "Retrieving column names..."
-    column_names=$(sqlcmd -S "${db_server},${db_port}" -d "${db_name}" -U "${db_user}" -P "${db_password}" -Q "SET FMTONLY OFF; EXEC $procedure_name" -W -h-1 -t " " | head -n 1)
+    # Use sqlcmd to execute the stored procedure and fetch the column names
+    # Replace 'your_stored_procedure_name' with the actual stored procedure name
+    # You may need to add other connection options like -S, -U, -P, etc.
+    column_names=$(sqlcmd -S "your_db_server,${db_port}" -d "${db_name}" -U "${db_user}" -P "${db_password}" -Q "SET NOCOUNT ON; EXEC your_stored_procedure_name" -h -1 | head -n 1)
 }
 
 # Execute the stored procedure and save the result as CSV
 execute_stored_procedure() {
-    local procedure_name="your_stored_procedure_name"
-
-    # Get column names from the stored procedure result
-    column_names=$(sqlcmd -S "${db_server},${db_port}" -d "${db_name}" -U "${db_user}" -P "${db_password}" -Q "SET NOCOUNT ON; EXEC $procedure_name" -W -h-1 -t " " | head -n 1)
-
     # Execute the stored procedure and append the result to the CSV file
     echo "Executing stored procedure..."
     sqlcmd -S "${db_server},${db_port}" -d "${db_name}" -U "${db_user}" -P "${db_password}" -Q "SET NOCOUNT ON; EXEC $procedure_name" -s "," -h -1 >> "$csv_file"
@@ -68,15 +69,14 @@ main() {
     # Remove old files
     remove_old_files
 
-    # Execute the stored procedure and retrieve column names
+    # Get column names dynamically
     get_column_names
-    execute_stored_procedure
 
+    # Execute the stored procedure and add column names to the CSV file
+    execute_stored_procedure
 
     # Convert CSV to XLSX
     convert_csv_to_xlsx
-
-    # Clean up temporary files if needed
 }
 
 # Run the main script
