@@ -45,9 +45,15 @@ if [ $? -eq 0 ]; then
     (echo "Your,Header,Names"; echo "$query_result") | awk 'BEGIN {FS=OFS=","} {for (i=1; i<=NF; ++i) $i = "\"" $i "\"" } 1' > "$OUTPUT_FILE.csv"
     log "SQL query executed successfully."
 
-    # Convert CSV to Excel and apply cell formatting
+    Convert CSV to Excel and apply cell formatting
     log "Converting CSV to Excel and formatting cells..."
-    libreoffice --headless --convert-to xlsx --infilter=CSV:44,34,UTF8 "$OUTPUT_FILE.csv" --outdir "$OUTPUT_FOLDER"
+    libreoffice --headless --convert-to xlsx --infilter=CSV:44,34,UTF8 --outdir "$OUTPUT_FOLDER" "$OUTPUT_FILE.csv"
+
+    # Apply cell formatting in the generated Excel file
+    log "Applying cell formatting in the Excel file..."
+    echo -e "scell(1,1,3,1,2)\nscell(1,2,3,1,2)\nscell(1,3,3,1,2)" > "$OUTPUT_FILE.soc"
+    libreoffice --headless --convert-to xlsx --outdir "$OUTPUT_FOLDER" "$OUTPUT_FILE.soc"
+   
     log "Excel file generated successfully."
 else
     log "Error executing SQL query. Details: $query_result"
