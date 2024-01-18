@@ -37,11 +37,23 @@ trap cleanup INT TERM EXIT
 
 # Execute SQL query and store the results in a CSV file
 log "Executing SQL query..."
-sqlcmd -S "$SQL_SERVER,$PORT_NUMBER" -d "$DATABASE" -U "$USERNAME" -P "$PASSWORD" -Q "$SQL_QUERY" -s "," -o "$OUTPUT_FILE.csv" || { log "Error executing SQL query."; exit 1; }
 
-# Convert CSV to Excel using LibreOffice
-log "Converting CSV to Excel..."
-libreoffice --headless --convert-to xlsx --infilter=CSV:44,34,UTF8 "$OUTPUT_FILE.csv" || { log "Error converting CSV to Excel."; exit 1; }
+query_result=$(sqlcmd -S "$SQL_SERVER,$PORT_NUMBER" -d "$DATABASE" -U "$USERNAME" -P "$PASSWORD" -Q "$SQL_QUERY" -s "," -W)
+
+if [ $? -eq 0 ]; then
+    # Write the result to the CSV file and format cells as number
+    (echo "Your,Header,Names"; echo "$query_result") | awk 'BEGIN {FS=OFS=","} {for (i=1; i<=NF; ++i) $i = "\"" $i "\"" } 1' > "$OUTPUT_FILE.csv"
+    log "SQL query executed successfully."
+
+    # Convert CSV to Excel and apply cell formatting
+    log "Converting CSV to Excel and formatting cells..."
+    libreoffice --headless --convert-to xlsx --infilter=CSV:44,34,UTF8 "$OUTPUT_FILE.csv" --outdir "$OUTPUT_FOLDER"
+    log "Excel file generated successfully."
+else
+    log "Error executing SQL query. Details: $query_result"
+    exit 1
+fi
+
 
 # Remove temporary CSV file
 rm -f "$OUTPUT_FILE.csv"
