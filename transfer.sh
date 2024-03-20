@@ -1,7 +1,16 @@
 #!/bin/bash
 
-# Define source file and destination directory
-source_file="/path/to/source/file.txt"
+# Check if source file path is provided
+if [ -z "$1" ]; then
+    echo "Error: Source file path not provided."
+    echo "Usage: $0 <source_file>"
+    exit 1
+fi
+
+# Extract source file path from the argument
+source_file="$1"
+
+# Define destination directory
 destination_directory="/path/to/destination/"
 
 # Delete previous files from the destination directory
